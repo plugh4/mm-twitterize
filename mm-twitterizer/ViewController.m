@@ -23,14 +23,18 @@
     self.textView1.delegate = self;
 }
 
+
+#pragma mark -
+#pragma mark TwitterizeButton
+
+
 - (IBAction)onTwitterizePressed:(UIButton *)sender {
     
     NSString *oldText = self.textView1.text;
     NSString *newText = [self deleteVowels:oldText];
     self.textView1.text = newText;
+    [self updateCount];
 }
-
-
 
 - (BOOL)isVowel:(char)c {
     NSString *charAsStr = [[NSString stringWithFormat:@"%c", c] lowercaseString];
@@ -51,27 +55,23 @@
 
 
 #pragma mark -
-#pragma mark UITextView protocol methods
+#pragma mark 140 character max
 
-
-- (void)textViewDidChange:(UITextView *)textView
-{
-    // this method fires with every keystroke
-    //NSLog(@"textViewDidChange()");
-
+- (void)updateCount {
     // set character count
     self.countLabel.text = [NSString stringWithFormat:@"(%lu)", self.textView1.text.length];
 }
 
+// this method fires on every keystroke
+- (void)textViewDidChange:(UITextView *)textView
+{
+    [self updateCount];
+}
 
+
+// this method fires on every insertion + every deletion
 -(BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)insertedText
 {
-    // this method fires with every insertion + every deletion
-
-    // debug
-    //NSString *replaced = [self.textView1.text substringWithRange:range];
-    //NSLog(@"replacing >%@< with >%@<",replaced, insertedText);
-    
     if ([insertedText isEqualToString:@""]) {
         // deletion
     } else {
@@ -81,10 +81,17 @@
         }
     }
     return YES;
+    
+    // debug
+    //NSString *replaced = [self.textView1.text substringWithRange:range];
+    //NSLog(@"replacing >%@< with >%@<",replaced, insertedText);
 }
 
 
-// addHashtag
+#pragma mark -
+#pragma mark HashtagButton
+
+
 int numHashtagButtonPresses = 0;
 - (IBAction)onHashtagButtonPressed:(UIButton *)sender
 {
@@ -101,13 +108,13 @@ int numHashtagButtonPresses = 0;
         }
         [newText appendString:word];
         [newText appendString:@" "];
-        // version 2
-        //newText2 = [NSString stringWithFormat:@"%@%@ ", newText2, word];
-        //NSLog(@"newText = >%@<", newText);
     }
-    // strip out trailing space
+    // strip trailing space
     newText = [newText substringToIndex:(newText.length - 1)];
     self.textView1.text = newText;
+    
+    [self updateCount];
+
 
 // block version
 //    [wordsArray enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL *stop)
@@ -123,10 +130,43 @@ int numHashtagButtonPresses = 0;
 //    }];
 }
 
+- (NSString *)addHashtagToWord:(NSString *)word
+{
+    if ([word containsString:@"#"]) {
+        return word;
+    } else {
+        return [NSString stringWithFormat:@"#%@", word];
+    }
+}
+
+
+- (NSString *)eachWord:(NSString *)sentence applyFilter:(NSString * (^)(NSString *))filterBlock
+{
+    NSMutableString *ret = [NSMutableString new];
+    
+    NSArray *wordsArray = [sentence componentsSeparatedByString: @" "];
+    for (int i = 0; i < wordsArray.count; i++) {
+        NSString *word = wordsArray[i];
+        // apply filter
+        word = filterBlock(word);
+        // reconstitute sentence
+        [ret appendString:word];
+        [ret appendString:@" "];
+    }
+    // strip trailing space
+    ret = [ret substringToIndex:(ret.length - 1)];
+    return ret;
+}
+
+
+#pragma mark -
+#pragma mark ReverseButton
+
+
 - (IBAction)onReverseButtonPressed:(UIButton *)sender {
     NSString *oldText = self.textView1.text;
     NSMutableString *newText = [NSMutableString new];
-
+    
     NSArray *wordsArray = [oldText componentsSeparatedByString: @" "];
     for (int i = 0; i < wordsArray.count; i++) {
         NSString *word = wordsArray[i];
@@ -138,13 +178,11 @@ int numHashtagButtonPresses = 0;
         [newText appendString:word];
         [newText appendString:@" "];
     }
+    
     // strip out trailing space
     newText = [newText substringToIndex:(newText.length - 1)];
     self.textView1.text = newText;
 }
-
-
-
 
 - (NSString *)reverseWord:(NSString *)oldWord
 {
@@ -155,16 +193,7 @@ int numHashtagButtonPresses = 0;
     }
     return newWord;
 }
-- (NSString *)addHashtagToWord:(NSString *)word
-{
-    if ([word containsString:@"#"]) {
-        return word;
-    } else {
-        return [NSString stringWithFormat:@"#%@", word];
-    }
-}
 
-// reverseWord
 
 
 @end
